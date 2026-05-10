@@ -1,9 +1,9 @@
-import { useFrameworkReady } from '@/hooks/useFrameworkReady'import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useFrameworkReady } from "@/hooks/useFrameworkReady";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useFrameworkReady } from "@/hooks/useFrameworkReady";
 
 void SplashScreen.preventAutoHideAsync();
 
