@@ -13,6 +13,7 @@ import { Search } from "lucide-react-native";
 import Svg, { Defs, LinearGradient, Stop, Text as SvgText, Path, G } from "react-native-svg";
 import * as Haptics from "expo-haptics";
 import FadeInOnFocus from "@/components/FadeInOnFocus";
+import { useRouter } from "expo-router";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const GRID_CARD_WIDTH = (SCREEN_WIDTH - 16 - 8) / 2;
@@ -317,6 +318,7 @@ function GridSection({
 }
 
 export default function ChallengeScreen() {
+  const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<Filter>("すべて");
 
   const handleFilter = useCallback((f: Filter) => {
@@ -325,9 +327,17 @@ export default function ChallengeScreen() {
   }, []);
 
   const handleItemPress = useCallback((item: ContentItem) => {
-    console.log(`[content] tapped: ${item.id} ${item.title}`);
     void Haptics.selectionAsync();
-  }, []);
+    router.push({
+      pathname: "/content-detail",
+      params: {
+        id: item.id,
+        title: item.title,
+        imageUrl: item.imageUrl,
+        category: item.category,
+      },
+    });
+  }, [router]);
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
