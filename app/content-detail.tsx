@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from "react";
+import React, { useRef, useState, useCallback, useEffect } from "react";
 import {
   Dimensions,
   Pressable,
@@ -17,8 +17,10 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withSpring,
   interpolate,
   Extrapolation,
+  runOnJS,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 
@@ -66,6 +68,32 @@ export default function ContentDetailScreen() {
 
   const scrollY = useSharedValue(0);
 
+  // slide-up entrance animation
+  const slideY = useSharedValue(SCREEN_HEIGHT);
+  const backdropOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    slideY.value = withSpring(0, { damping: 28, stiffness: 260, mass: 0.8 });
+    backdropOpacity.value = withTiming(1, { duration: 250 });
+  }, []);
+
+  const slideStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: slideY.value }],
+  }));
+
+  const backdropStyle = useAnimatedStyle(() => ({
+    opacity: backdropOpacity.value,
+  }));
+
+  const handleClose = useCallback(() => {
+    if (Platform.OS !== "web") {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    slideY.value = withTiming(SCREEN_HEIGHT, { duration: 320 });
+    backdropOpacity.value = withTiming(0, { duration: 280 });
+    setTimeout(() => router.back(), 320);
+  }, [router]);
+
   const heroAnimStyle = useAnimatedStyle(() => ({
     opacity: interpolate(scrollY.value, [0, SCREEN_HEIGHT * 0.3], [1, 0.6], Extrapolation.CLAMP),
   }));
@@ -104,7 +132,9 @@ export default function ContentDetailScreen() {
   const secondaryTag = category === "音楽" ? "筋トレ" : "メンタル";
 
   return (
-    <View style={styles.root}>
+    <View style={styles.rootContainer}>
+      <Animated.View style={[styles.backdrop, backdropStyle]} />
+      <Animated.View style={[styles.root, slideStyle]}>
       <Animated.ScrollView
         style={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -122,7 +152,7 @@ export default function ContentDetailScreen() {
           <SafeAreaView style={styles.topBar} edges={["top"]}>
             <Pressable
               style={styles.iconBtn}
-              onPress={() => router.back()}
+              onPress={handleClose}
               hitSlop={12}
             >
               <ArrowLeft color="#fff" size={28} strokeWidth={2} />
@@ -261,6 +291,7 @@ export default function ContentDetailScreen() {
           </View>
         </View>
       </Animated.ScrollView>
+      </Animated.View>
     </View>
   );
 }
@@ -270,9 +301,20 @@ const MISSION_CARD_WIDTH = SCREEN_WIDTH * 0.68;
 const MISSION_CARD_HEIGHT = MISSION_CARD_WIDTH * (1 / 1.5);
 
 const styles = StyleSheet.create({
+  rootContainer: {
+    flex: 1,
+    backgroundColor: "transparent",
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
   root: {
     flex: 1,
     backgroundColor: "#09090b",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: "hidden",
   },
   scroll: {
     flex: 1,
