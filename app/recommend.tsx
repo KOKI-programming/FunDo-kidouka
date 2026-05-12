@@ -115,26 +115,27 @@ export default function RecommendScreen() {
     () => (
       <View style={styles.grid}>
         {CONTENTS.map((c: ContentItem) => (
-          <Pressable
-            key={c.id}
-            onPress={() => handleContentPress(c)}
-            style={({ pressed }) => [styles.gridCard, pressed && styles.pressed]}
-            testID={`content-${c.id}`}
-          >
-            <Image
-              source={{ uri: c.imageUrl }}
-              style={StyleSheet.absoluteFillObject}
-              contentFit="cover"
-              transition={300}
-            />
-            <View style={styles.gridCardOverlay} />
-            <View style={styles.gridCardContent}>
-              <Text style={styles.gridCardCategory}>{c.category.toUpperCase()}</Text>
-              <Text style={styles.gridCardTitle} numberOfLines={2}>
-                {c.title}
-              </Text>
-            </View>
-          </Pressable>
+          <View key={c.id} style={styles.gridCard}>
+            <Pressable
+              onPress={() => handleContentPress(c)}
+              style={({ pressed }) => [styles.gridCardPressable, pressed && styles.pressed]}
+              testID={`content-${c.id}`}
+            >
+              <Image
+                source={{ uri: c.imageUrl }}
+                style={StyleSheet.absoluteFillObject}
+                contentFit="cover"
+                transition={300}
+              />
+              <View style={styles.gridCardOverlay} />
+              <View style={styles.gridCardContent}>
+                <Text style={styles.gridCardCategory}>{c.category.toUpperCase()}</Text>
+                <Text style={styles.gridCardTitle} numberOfLines={2}>
+                  {c.title}
+                </Text>
+              </View>
+            </Pressable>
+          </View>
         ))}
       </View>
     ),
@@ -356,6 +357,7 @@ export default function RecommendScreen() {
 }
 
 const CARD_WIDTH = (SCREEN_WIDTH - 16 * 2 - 12) / 2;
+const CARD_HEIGHT = CARD_WIDTH / 0.8;
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#ffffff" },
@@ -427,12 +429,15 @@ const styles = StyleSheet.create({
   },
   gridCard: {
     width: CARD_WIDTH,
-    aspectRatio: 0.8,
+    height: CARD_HEIGHT,
     borderRadius: 28,
     overflow: "hidden",
     borderWidth: 2,
     borderColor: "#f4f4f5",
     backgroundColor: "#f4f4f5",
+  },
+  gridCardPressable: {
+    ...StyleSheet.absoluteFillObject,
   },
   gridCardOverlay: {
     ...StyleSheet.absoluteFillObject,
