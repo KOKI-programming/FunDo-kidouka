@@ -77,7 +77,6 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const FILTER_CARD_WIDTH = 176;
 const FILTER_CARD_GAP = 20;
 const FILTER_SNAP = FILTER_CARD_WIDTH + FILTER_CARD_GAP;
-const FILTER_SIDE_PAD = (SCREEN_WIDTH - FILTER_CARD_WIDTH) / 2;
 
 function MissionFilterCard({
   filter,
@@ -1038,12 +1037,18 @@ function formatHMS(totalSec: number): string {
 
 function StatsCard() {
   const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [filterSidePad, setFilterSidePad] = useState(0);
   const [range, setRange] = useState<StatsRange>("week");
   const [mode, setMode] = useState<ViewMode>("time");
   const bars = RANGE_DATA[range];
 
   const filterScrollX = useRef(new RNAnimated.Value(0)).current;
   const filterScrollRef = useRef<ScrollView>(null);
+
+  const handleFilterLayout = useCallback((e: LayoutChangeEvent) => {
+    const w = e.nativeEvent.layout.width;
+    setFilterSidePad(Math.max(0, (w - FILTER_CARD_WIDTH) / 2));
+  }, []);
 
   const handleFilterScroll = useMemo(
     () =>
@@ -1108,11 +1113,12 @@ function StatsCard() {
         decelerationRate={0.98}
         contentContainerStyle={[
           styles.monthFilterContent,
-          { paddingLeft: FILTER_SIDE_PAD, paddingRight: FILTER_SIDE_PAD - FILTER_CARD_GAP },
+          { paddingLeft: filterSidePad, paddingRight: Math.max(0, filterSidePad - FILTER_CARD_GAP) },
         ]}
         style={styles.monthFilterRow}
         onScroll={handleFilterScroll}
         scrollEventThrottle={8}
+        onLayout={handleFilterLayout}
       >
         {MONTH_FILTERS.map((f, i) => (
           <MissionFilterCard
@@ -1233,6 +1239,7 @@ function StatsCard() {
 
 function MonthlyCard() {
   const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [sidePad, setSidePad] = useState(0);
   const active = MONTH_FILTERS.find((f) => f.id === activeFilter) ?? MONTH_FILTERS[0];
   const cells: (number | null)[] = [
     ...Array.from({ length: MONTH_FIRST_WEEKDAY }, () => null),
@@ -1263,6 +1270,11 @@ function MonthlyCard() {
     }
   }, []);
 
+  const handleFilterLayout = useCallback((e: LayoutChangeEvent) => {
+    const w = e.nativeEvent.layout.width;
+    setSidePad(Math.max(0, (w - FILTER_CARD_WIDTH) / 2));
+  }, []);
+
   return (
     <View style={styles.weeklyCard}>
       <View style={styles.weekNavRow}>
@@ -1284,11 +1296,12 @@ function MonthlyCard() {
         decelerationRate={0.98}
         contentContainerStyle={[
           styles.monthFilterContent,
-          { paddingLeft: FILTER_SIDE_PAD, paddingRight: FILTER_SIDE_PAD - FILTER_CARD_GAP },
+          { paddingLeft: sidePad, paddingRight: Math.max(0, sidePad - FILTER_CARD_GAP) },
         ]}
         style={styles.monthFilterRow}
         onScroll={handleScroll}
         scrollEventThrottle={8}
+        onLayout={handleFilterLayout}
       >
         {MONTH_FILTERS.map((f, i) => (
           <MissionFilterCard
