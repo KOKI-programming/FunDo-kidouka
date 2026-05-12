@@ -2,7 +2,7 @@ import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { getContentsForMood, type ContentItem } from "@/constants/contents";
+import { getContentsForMission, type ContentItem } from "@/constants/contents";
 import {
   Animated,
   Dimensions,
@@ -52,7 +52,7 @@ export default function RecommendScreen() {
   const [pageIndex, setPageIndex] = useState<number>(0);
   const [selectedMood, setSelectedMood] = useState<string>("m1");
 
-  const CONTENTS = useMemo(() => getContentsForMood(selectedMood), [selectedMood]);
+  const CONTENTS = useMemo(() => getContentsForMission(params.id ?? ""), [params.id]);
   const pagerRef = useRef<ScrollView>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
 
@@ -226,26 +226,10 @@ export default function RecommendScreen() {
             contentContainerStyle={styles.pageContent}
             showsVerticalScrollIndicator={false}
           >
-            {(() => {
-              const mood = MOODS.find((m) => m.id === selectedMood);
-              return (
-                <>
-                  <View style={[styles.moodTagRow]}>
-                    <View style={[styles.moodTag, { backgroundColor: mood?.color ?? "#f97316" }]}>
-                      <Text style={styles.moodTagEmoji}>{mood?.emoji ?? "✨"}</Text>
-                      <Text style={styles.moodTagLabel}>{mood?.label ?? "おすすめ"}</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.pageHeading}>おすすめのコンテンツ</Text>
-                  <Text style={styles.pageSubtitle}>
-                    {mood?.id === "m1" && "自信を高めるコンテンツをセレクト。"}
-                    {mood?.id === "m2" && "深い集中を引き出すコンテンツ。"}
-                    {mood?.id === "m3" && "テンションを最高潮にするコンテンツ。"}
-                    {mood?.id === "m4" && "知識と情報を手に入れるコンテンツ。"}
-                  </Text>
-                </>
-              );
-            })()}
+            <Text style={styles.pageHeading}>✨ おすすめのコンテンツ</Text>
+            <Text style={styles.pageSubtitle}>
+              最高の自分を引き出すコンテンツで、自信をチャージ。
+            </Text>
             {renderContentGrid()}
             <Pressable
               onPress={handleNoContentPress}
@@ -296,7 +280,6 @@ export default function RecommendScreen() {
                     onPress={() => {
                       setSelectedMood(m.id);
                       void Haptics.selectionAsync();
-                      setTimeout(() => goToPage(0), 200);
                     }}
                     style={({ pressed }) => [
                       styles.moodCard,
@@ -640,26 +623,5 @@ const styles = StyleSheet.create({
   dotActive: {
     backgroundColor: "#f97316",
     width: 18,
-  },
-  moodTagRow: {
-    flexDirection: "row",
-    marginBottom: 12,
-  },
-  moodTag: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  moodTagEmoji: {
-    fontSize: 14,
-  },
-  moodTagLabel: {
-    fontSize: 12,
-    fontWeight: "900" as const,
-    color: "#ffffff",
-    letterSpacing: 0.5,
   },
 });
