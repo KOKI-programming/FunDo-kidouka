@@ -1,6 +1,11 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { useEffect } from "react";
 import {
+  Animated as RNAnimated,
+  Dimensions,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -67,6 +72,82 @@ const MONTH_FILTERS: MonthFilter[] = [
     imageUrl: m.imageUrl,
   })),
 ];
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const FILTER_CARD_WIDTH = 176;
+const FILTER_CARD_GAP = 20;
+const FILTER_SNAP = FILTER_CARD_WIDTH + FILTER_CARD_GAP;
+const FILTER_SIDE_PAD = (SCREEN_WIDTH - FILTER_CARD_WIDTH) / 2;
+
+function MissionFilterCard({
+  filter,
+  index,
+  scrollX,
+  isActive,
+  onPress,
+}: {
+  filter: MonthFilter;
+  index: number;
+  scrollX: RNAnimated.Value;
+  isActive: boolean;
+  onPress: (id: string) => void;
+}) {
+  const center = index * FILTER_SNAP;
+
+  const scale = scrollX.interpolate({
+    inputRange: [center - FILTER_SNAP, center, center + FILTER_SNAP],
+    outputRange: [0.88, 1.0, 0.88],
+    extrapolate: "clamp",
+  });
+
+  const cardOpacity = scrollX.interpolate({
+    inputRange: [center - FILTER_SNAP, center, center + FILTER_SNAP],
+    outputRange: [0.4, 1, 0.4],
+    extrapolate: "clamp",
+  });
+
+  const ringOpacity = scrollX.interpolate({
+    inputRange: [center - FILTER_SNAP * 0.45, center, center + FILTER_SNAP * 0.45],
+    outputRange: [0, 1, 0],
+    extrapolate: "clamp",
+  });
+
+  return (
+    <RNAnimated.View
+      style={{
+        width: FILTER_CARD_WIDTH,
+        height: 112,
+        marginRight: FILTER_CARD_GAP,
+        transform: [{ scale }],
+        opacity: cardOpacity,
+      }}
+    >
+      <Pressable
+        onPress={() => onPress(filter.id)}
+        style={styles.filterCardBase}
+      >
+        <RNAnimated.Image
+          source={{ uri: filter.imageUrl }}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+        />
+        <View style={[styles.monthFilterOverlay, !isActive && styles.monthFilterOverlayInactive]} />
+        <View style={styles.monthFilterInner}>
+          <View style={styles.monthFilterPanel}>
+            <Text style={styles.monthFilterTitle}>{filter.title}</Text>
+            <View style={styles.monthFilterChip}>
+              <Text style={styles.monthFilterChipText}>{filter.label}</Text>
+            </View>
+          </View>
+        </View>
+        <RNAnimated.View
+          style={[styles.filterCardRing, { opacity: ringOpacity }]}
+          pointerEvents="none"
+        />
+      </Pressable>
+    </RNAnimated.View>
+  );
+}
 
 const MONTH_DAYS = 31;
 const MONTH_FIRST_WEEKDAY = 4; // Friday (Mon=0)
@@ -473,14 +554,28 @@ const styles = StyleSheet.create({
   },
   deleteBtn: { padding: 6 },
 
+  filterCardBase: {
+    flex: 1,
+    borderRadius: 16,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+  },
+  filterCardRing: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 16,
+    borderWidth: 3,
+    borderColor: "#f97316",
+  },
+
   // Monthly
   monthFilterRow: {
     paddingVertical: 8,
     marginBottom: 16,
   },
   monthFilterContent: {
-    paddingHorizontal: 16,
-    gap: 20,
     alignItems: "center",
   },
   monthFilterCard: {
@@ -947,6 +1042,30 @@ function StatsCard() {
   const [mode, setMode] = useState<ViewMode>("time");
   const bars = RANGE_DATA[range];
 
+  const filterScrollX = useRef(new RNAnimated.Value(0)).current;
+  const filterScrollRef = useRef<ScrollView>(null);
+
+  const handleFilterScroll = useMemo(
+    () =>
+      RNAnimated.event([{ nativeEvent: { contentOffset: { x: filterScrollX } } }], {
+        useNativeDriver: Platform.OS !== "web",
+        listener: (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+          const idx = Math.round(e.nativeEvent.contentOffset.x / FILTER_SNAP);
+          const clamped = Math.max(0, Math.min(idx, MONTH_FILTERS.length - 1));
+          setActiveFilter(MONTH_FILTERS[clamped].id);
+        },
+      }),
+    [filterScrollX]
+  );
+
+  const handleFilterSelect = useCallback((id: string) => {
+    const idx = MONTH_FILTERS.findIndex((f) => f.id === id);
+    if (idx >= 0) {
+      filterScrollRef.current?.scrollTo({ x: idx * FILTER_SNAP, animated: true });
+      setActiveFilter(id);
+    }
+  }, []);
+
   const { values, maxVal, totalSeconds, totalCount, hero, heroUnit } = useMemo(() => {
     const vals = bars.map((b) => (mode === "time" ? b.seconds / 3600 : b.count));
     const m = Math.max(...vals, 0.0001);
@@ -980,45 +1099,32 @@ function StatsCard() {
         </Pressable>
       </View>
 
-      <ScrollView
+      <RNAnimated.ScrollView
+        ref={filterScrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
-        snapToInterval={196}
+        snapToInterval={FILTER_SNAP}
+        snapToAlignment="start"
         decelerationRate={0.98}
-        contentContainerStyle={styles.monthFilterContent}
+        contentContainerStyle={[
+          styles.monthFilterContent,
+          { paddingLeft: FILTER_SIDE_PAD, paddingRight: FILTER_SIDE_PAD - FILTER_CARD_GAP },
+        ]}
         style={styles.monthFilterRow}
+        onScroll={handleFilterScroll}
+        scrollEventThrottle={8}
       >
-        {MONTH_FILTERS.map((f) => {
-          const isActive = f.id === activeFilter;
-          return (
-            <Pressable
-              key={f.id}
-              onPress={() => setActiveFilter(f.id)}
-              style={[
-                styles.monthFilterCard,
-                isActive ? styles.monthFilterCardActive : styles.monthFilterCardInactive,
-              ]}
-            >
-              <Image source={{ uri: f.imageUrl }} style={styles.monthFilterImg} contentFit="cover" />
-              <View
-                style={[
-                  styles.monthFilterOverlay,
-                  !isActive && styles.monthFilterOverlayInactive,
-                ]}
-              />
-              <View style={styles.monthFilterInner}>
-                <View style={styles.monthFilterPanel}>
-                  <Text style={styles.monthFilterTitle}>{f.title}</Text>
-                  <View style={styles.monthFilterChip}>
-                    <Text style={styles.monthFilterChipText}>{f.label}</Text>
-                  </View>
-                </View>
-              </View>
-              {isActive ? <View style={styles.monthFilterDot} /> : null}
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+        {MONTH_FILTERS.map((f, i) => (
+          <MissionFilterCard
+            key={f.id}
+            filter={f}
+            index={i}
+            scrollX={filterScrollX}
+            isActive={f.id === activeFilter}
+            onPress={handleFilterSelect}
+          />
+        ))}
+      </RNAnimated.ScrollView>
 
       <View style={styles.statsRangeRow}>
         {(["week", "month", "year", "all"] as StatsRange[]).map((r) => {
@@ -1133,6 +1239,30 @@ function MonthlyCard() {
     ...Array.from({ length: MONTH_DAYS }, (_, i) => i + 1),
   ];
 
+  const scrollX = useRef(new RNAnimated.Value(0)).current;
+  const scrollRef = useRef<ScrollView>(null);
+
+  const handleScroll = useMemo(
+    () =>
+      RNAnimated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
+        useNativeDriver: Platform.OS !== "web",
+        listener: (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+          const idx = Math.round(e.nativeEvent.contentOffset.x / FILTER_SNAP);
+          const clamped = Math.max(0, Math.min(idx, MONTH_FILTERS.length - 1));
+          setActiveFilter(MONTH_FILTERS[clamped].id);
+        },
+      }),
+    [scrollX]
+  );
+
+  const handleSelect = useCallback((id: string) => {
+    const idx = MONTH_FILTERS.findIndex((f) => f.id === id);
+    if (idx >= 0) {
+      scrollRef.current?.scrollTo({ x: idx * FILTER_SNAP, animated: true });
+      setActiveFilter(id);
+    }
+  }, []);
+
   return (
     <View style={styles.weeklyCard}>
       <View style={styles.weekNavRow}>
@@ -1145,45 +1275,32 @@ function MonthlyCard() {
         </Pressable>
       </View>
 
-      <ScrollView
+      <RNAnimated.ScrollView
+        ref={scrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
-        snapToInterval={196}
+        snapToInterval={FILTER_SNAP}
+        snapToAlignment="start"
         decelerationRate={0.98}
-        contentContainerStyle={styles.monthFilterContent}
+        contentContainerStyle={[
+          styles.monthFilterContent,
+          { paddingLeft: FILTER_SIDE_PAD, paddingRight: FILTER_SIDE_PAD - FILTER_CARD_GAP },
+        ]}
         style={styles.monthFilterRow}
+        onScroll={handleScroll}
+        scrollEventThrottle={8}
       >
-        {MONTH_FILTERS.map((f) => {
-          const isActive = f.id === activeFilter;
-          return (
-            <Pressable
-              key={f.id}
-              onPress={() => setActiveFilter(f.id)}
-              style={[
-                styles.monthFilterCard,
-                isActive ? styles.monthFilterCardActive : styles.monthFilterCardInactive,
-              ]}
-            >
-              <Image source={{ uri: f.imageUrl }} style={styles.monthFilterImg} contentFit="cover" />
-              <View
-                style={[
-                  styles.monthFilterOverlay,
-                  !isActive && styles.monthFilterOverlayInactive,
-                ]}
-              />
-              <View style={styles.monthFilterInner}>
-                <View style={styles.monthFilterPanel}>
-                  <Text style={styles.monthFilterTitle}>{f.title}</Text>
-                  <View style={styles.monthFilterChip}>
-                    <Text style={styles.monthFilterChipText}>{f.label}</Text>
-                  </View>
-                </View>
-              </View>
-              {isActive ? <View style={styles.monthFilterDot} /> : null}
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+        {MONTH_FILTERS.map((f, i) => (
+          <MissionFilterCard
+            key={f.id}
+            filter={f}
+            index={i}
+            scrollX={scrollX}
+            isActive={f.id === activeFilter}
+            onPress={handleSelect}
+          />
+        ))}
+      </RNAnimated.ScrollView>
 
       <View
         style={{
