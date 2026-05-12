@@ -107,6 +107,34 @@ export const NIGHT: ContentItem[] = [
   { id: "n5", title: "明日勝つための夜", imageUrl: "https://images.unsplash.com/photo-1531353826977-0941b4779a1c?auto=format&fit=crop&q=80&w=600", category: "ポッドキャスト" },
 ];
 
+// 気分IDに対応するコンテンツ（4件）
+export const MOOD_CONTENTS: Record<string, ContentItem[]> = {
+  m1: [
+    BRAND[1],  // 自分の価値を上げる時間
+    BRAND[6],  // 自信を作る時間
+    SELF[8 - 1] ?? SELF[7], // メンタル応急処置
+    TOP10[1],  // 限界を更新する
+  ],
+  m2: [
+    STUDY[2],  // ガチ集中モード
+    STUDY[3],  // 世界を遮断する音
+    STUDY[4],  // 静かに狂う作業時間
+    STUDY[1],  // これ流したら終わるまでやれ
+  ],
+  m3: [
+    TOP10[2],  // サボる自分を潰す音
+    TOP10[5],  // 心拍数ぶち上げモード
+    WORKOUT[4],// 鬼集中ワークアウト
+    MORNING[3],// 最強の1日スタート
+  ],
+  m4: [
+    GROWTH[0], // 世界が変わる！読書の習慣
+    GROWTH[1], // 人生効率化ラジオ
+    GROWTH[4], // 頭いい人の習慣
+    GROWTH[5], // 明日から変わる思考法
+  ],
+};
+
 // ミッションIDに対応するおすすめコンテンツ（4件）
 export const MISSION_CONTENTS: Record<string, ContentItem[]> = {
   "lazy-start": [
