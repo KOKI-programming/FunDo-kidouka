@@ -19,6 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import ReAnimated, {
   useSharedValue,
   useAnimatedStyle,
+  useAnimatedScrollHandler,
   withTiming,
   withSpring,
   interpolate,
@@ -146,6 +147,9 @@ export default function ContentDetailScreen() {
   const lastHapticMission = useRef(0);
 
   const scrollY = useSharedValue(0);
+  const onVerticalScroll = useAnimatedScrollHandler((e) => {
+    scrollY.value = e.contentOffset.y;
+  });
 
   // slide-up entrance animation
   const slideY = useSharedValue(SCREEN_HEIGHT);
@@ -235,18 +239,16 @@ export default function ContentDetailScreen() {
 
   return (
     <View style={styles.rootContainer}>
-      <Animated.View style={[styles.backdrop, backdropStyle]} />
-      <Animated.View style={[styles.root, slideStyle]}>
-      <Animated.ScrollView
+      <ReAnimated.View style={[styles.backdrop, backdropStyle]} />
+      <ReAnimated.View style={[styles.root, slideStyle]}>
+      <ReAnimated.ScrollView
         style={styles.scroll}
         showsVerticalScrollIndicator={false}
-        onScroll={(e) => {
-          scrollY.value = e.nativeEvent.contentOffset.y;
-        }}
+        onScroll={onVerticalScroll}
         scrollEventThrottle={16}
       >
         {/* Hero section */}
-        <Animated.View style={[styles.hero, heroAnimStyle]}>
+        <ReAnimated.View style={[styles.hero, heroAnimStyle]}>
           <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
           <View style={styles.heroGradient} />
 
@@ -311,7 +313,7 @@ export default function ContentDetailScreen() {
               ))}
             </Animated.ScrollView>
           </View>
-        </Animated.View>
+        </ReAnimated.View>
 
         {/* START button */}
         <View style={styles.startWrap}>
@@ -388,8 +390,8 @@ export default function ContentDetailScreen() {
             </Text>
           </View>
         </View>
-      </Animated.ScrollView>
-      </Animated.View>
+      </ReAnimated.ScrollView>
+      </ReAnimated.View>
     </View>
   );
 }

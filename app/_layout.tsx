@@ -34,7 +34,8 @@ function RootLayoutNav() {
         options={{
           headerShown: false,
           animation: "slide_from_bottom",
-          presentation: "modal",
+          presentation: "transparentModal",
+          contentStyle: { backgroundColor: "transparent" },
         }}
       />
       <Stack.Screen name="+not-found" options={{ title: "Not Found" }} />
