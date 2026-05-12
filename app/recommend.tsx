@@ -281,6 +281,7 @@ export default function RecommendScreen() {
                     onPress={() => {
                       setSelectedMood(m.id);
                       void Haptics.selectionAsync();
+                      setTimeout(() => goToPage(2), 120);
                     }}
                     style={({ pressed }) => [
                       styles.moodCard,
@@ -325,10 +326,22 @@ export default function RecommendScreen() {
             contentContainerStyle={styles.pageContent}
             showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.pageHeading}>コンテンツ選択</Text>
-            <Text style={styles.pageSubtitle}>
-              {MOODS.find((m) => m.id === selectedMood)?.label ?? "気分"}にぴったりのコンテンツを選んで始めよう。
-            </Text>
+            {(() => {
+              const mood = MOODS.find((m) => m.id === selectedMood);
+              return (
+                <>
+                  <View style={styles.moodHeadingRow}>
+                    <Text style={styles.moodHeadingEmoji}>{mood?.emoji ?? "✨"}</Text>
+                    <Text style={[styles.moodHeadingLabel, { color: mood?.color ?? "#f97316" }]}>
+                      {mood?.label ?? "コンテンツ選択"}
+                    </Text>
+                  </View>
+                  <Text style={styles.pageSubtitle}>
+                    {mood?.label ?? "気分"}にぴったりのコンテンツを選んで始めよう。
+                  </Text>
+                </>
+              );
+            })()}
             {renderContentGrid(MOOD_FILTERED_CONTENTS)}
             <Pressable
               onPress={handleNoContentPress}
@@ -624,5 +637,21 @@ const styles = StyleSheet.create({
   dotActive: {
     backgroundColor: "#f97316",
     width: 18,
+  },
+  moodHeadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+    flexWrap: "wrap",
+  },
+  moodHeadingEmoji: {
+    fontSize: 32,
+  },
+  moodHeadingLabel: {
+    fontSize: 30,
+    fontWeight: "900" as const,
+    letterSpacing: -1.5,
+    flexShrink: 1,
   },
 });
