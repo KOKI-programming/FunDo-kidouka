@@ -2,7 +2,7 @@ import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { getContentsForMission, type ContentItem } from "@/constants/contents";
+import { getContentsForMission, getContentsForMood, type ContentItem } from "@/constants/contents";
 import {
   Animated,
   Dimensions,
@@ -53,6 +53,7 @@ export default function RecommendScreen() {
   const [selectedMood, setSelectedMood] = useState<string>("m1");
 
   const CONTENTS = useMemo(() => getContentsForMission(params.id ?? ""), [params.id]);
+  const MOOD_FILTERED_CONTENTS = useMemo(() => getContentsForMood(selectedMood), [selectedMood]);
   const pagerRef = useRef<ScrollView>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
 
@@ -113,9 +114,9 @@ export default function RecommendScreen() {
   }, [router, params]);
 
   const renderContentGrid = useCallback(
-    () => (
+    (items: ContentItem[]) => (
       <View style={styles.grid}>
-        {CONTENTS.map((c: ContentItem) => (
+        {items.map((c: ContentItem) => (
           <View key={c.id} style={styles.gridCard}>
             <Pressable
               onPress={() => handleContentPress(c)}
@@ -140,7 +141,7 @@ export default function RecommendScreen() {
         ))}
       </View>
     ),
-    [handleContentPress, CONTENTS]
+    [handleContentPress]
   );
 
   return (
@@ -230,7 +231,7 @@ export default function RecommendScreen() {
             <Text style={styles.pageSubtitle}>
               最高の自分を引き出すコンテンツで、自信をチャージ。
             </Text>
-            {renderContentGrid()}
+            {renderContentGrid(CONTENTS)}
             <Pressable
               onPress={handleNoContentPress}
               style={({ pressed }) => [styles.noContentButton, pressed && styles.pressed]}
@@ -326,9 +327,9 @@ export default function RecommendScreen() {
           >
             <Text style={styles.pageHeading}>コンテンツ選択</Text>
             <Text style={styles.pageSubtitle}>
-              今の気分にぴったりのコンテンツを選んで始めよう。
+              {MOODS.find((m) => m.id === selectedMood)?.label ?? "気分"}にぴったりのコンテンツを選んで始めよう。
             </Text>
-            {renderContentGrid()}
+            {renderContentGrid(MOOD_FILTERED_CONTENTS)}
             <Pressable
               onPress={handleNoContentPress}
               style={({ pressed }) => [styles.noContentButton, pressed && styles.pressed]}
