@@ -12,9 +12,11 @@ export default function FadeInOnFocus({ children, style, duration = 300 }: Props
   const isFocused = useIsFocused();
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(10)).current;
+  const hasAnimated = useRef(false);
 
   useEffect(() => {
-    if (isFocused) {
+    if (isFocused && !hasAnimated.current) {
+      hasAnimated.current = true;
       opacity.setValue(0);
       translateY.setValue(10);
       Animated.parallel([
