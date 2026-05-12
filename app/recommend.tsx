@@ -2,6 +2,7 @@ import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
+import { getContentsForMission, type ContentItem } from "@/constants/contents";
 import {
   Animated,
   Dimensions,
@@ -25,13 +26,6 @@ type RecommendParams = {
   duration?: string;
 };
 
-type ContentItem = {
-  id: string;
-  title: string;
-  category: string;
-  imageUrl: string;
-};
-
 type MoodItem = {
   id: string;
   label: string;
@@ -42,37 +36,6 @@ type MoodItem = {
 };
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
-const CONTENTS: ContentItem[] = [
-  {
-    id: "c1",
-    title: "バチバチに仕上げる時間",
-    category: "音楽",
-    imageUrl:
-      "https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&q=80&w=600",
-  },
-  {
-    id: "c2",
-    title: "自分リセットタイム",
-    category: "ポッドキャスト",
-    imageUrl:
-      "https://images.unsplash.com/photo-1584622781564-1d987f7333c1?auto=format&fit=crop&q=80&w=600",
-  },
-  {
-    id: "c3",
-    title: "かっこいい男の作り方",
-    category: "ポッドキャスト",
-    imageUrl:
-      "https://images.unsplash.com/photo-1550133730-695473e544be?auto=format&fit=crop&q=80&w=600",
-  },
-  {
-    id: "c4",
-    title: "余裕ある男の思考",
-    category: "ポッドキャスト",
-    imageUrl:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=600",
-  },
-];
 
 const MOODS: MoodItem[] = [
   { id: "m1", label: "自信を付けたい", english: "CONFIDENCE", emoji: "✨", color: "#ec4899", badge: "CONFIDENCE" },
@@ -88,6 +51,8 @@ export default function RecommendScreen() {
   const params = useLocalSearchParams<RecommendParams>();
   const [pageIndex, setPageIndex] = useState<number>(0);
   const [selectedMood, setSelectedMood] = useState<string>("m1");
+
+  const CONTENTS = useMemo(() => getContentsForMission(params.id ?? ""), [params.id]);
   const pagerRef = useRef<ScrollView>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
 
@@ -149,7 +114,7 @@ export default function RecommendScreen() {
   const renderContentGrid = useCallback(
     () => (
       <View style={styles.grid}>
-        {CONTENTS.map((c) => (
+        {CONTENTS.map((c: ContentItem) => (
           <Pressable
             key={c.id}
             onPress={() => handleContentPress(c)}
@@ -173,7 +138,7 @@ export default function RecommendScreen() {
         ))}
       </View>
     ),
-    [handleContentPress]
+    [handleContentPress, CONTENTS]
   );
 
   return (
