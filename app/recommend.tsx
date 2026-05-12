@@ -71,6 +71,7 @@ export default function RecommendScreen() {
 
   const goToPage = useCallback((idx: number) => {
     pagerRef.current?.scrollTo({ x: idx * SCREEN_WIDTH, animated: true });
+    setPageIndex(idx);
     void Haptics.selectionAsync();
   }, []);
 
@@ -386,6 +387,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     position: "absolute",
+    width: "100%",
+    textAlign: "center",
     fontSize: 20,
     fontWeight: "900" as const,
     color: "#18181b",
