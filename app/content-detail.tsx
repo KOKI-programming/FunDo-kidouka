@@ -1,6 +1,9 @@
-import React, { useRef, useState, useCallback, useEffect } from "react";
+import React, { useRef, useState, useCallback, useEffect, useMemo, memo } from "react";
 import {
+  Animated,
   Dimensions,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,18 +16,23 @@ import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Bookmark, Music, Play, Pause } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated, {
+import ReAnimated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withSpring,
   interpolate,
   Extrapolation,
-  runOnJS,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+const M_CARD_WIDTH = SCREEN_WIDTH * 0.68;
+const M_CARD_HEIGHT = M_CARD_WIDTH * (1 / 1.5);
+const M_CARD_GAP = 24;
+const M_SNAP = M_CARD_WIDTH + M_CARD_GAP;
+const M_SIDE_PAD = (SCREEN_WIDTH - M_CARD_WIDTH) / 2;
 
 const MISSIONS_FOR_CONTENT = [
   {
@@ -53,6 +61,73 @@ const MISSIONS_FOR_CONTENT = [
   },
 ];
 
+type MissionItem = (typeof MISSIONS_FOR_CONTENT)[number];
+
+const MissionCard = memo(function MissionCard({
+  mission,
+  index,
+  scrollX,
+  contentTitle,
+  onPress,
+}: {
+  mission: MissionItem;
+  index: number;
+  scrollX: Animated.Value;
+  contentTitle: string;
+  onPress: (index: number) => void;
+}) {
+  const center = index * M_SNAP;
+
+  const scale = scrollX.interpolate({
+    inputRange: [center - M_SNAP, center, center + M_SNAP],
+    outputRange: [0.88, 1.05, 0.88],
+    extrapolate: "clamp",
+  });
+
+  const cardOpacity = scrollX.interpolate({
+    inputRange: [center - M_SNAP, center, center + M_SNAP],
+    outputRange: [0.22, 1, 0.22],
+    extrapolate: "clamp",
+  });
+
+  const ringOpacity = scrollX.interpolate({
+    inputRange: [center - M_SNAP * 0.45, center, center + M_SNAP * 0.45],
+    outputRange: [0, 1, 0],
+    extrapolate: "clamp",
+  });
+
+  return (
+    <Animated.View
+      style={{
+        width: M_CARD_WIDTH,
+        height: M_CARD_HEIGHT,
+        marginRight: M_CARD_GAP,
+        transform: [{ scale }],
+        opacity: cardOpacity,
+      }}
+    >
+      <Pressable
+        style={styles.missionCard}
+        onPress={() => onPress(index)}
+      >
+        <Image source={{ uri: mission.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
+        <View style={styles.missionCardOverlay} />
+        <View style={styles.missionCardContent}>
+          <Text style={styles.missionCardTitle}>{mission.title}</Text>
+          <View style={styles.missionChip}>
+            <Text style={styles.missionChipText}>{mission.subtitle}</Text>
+          </View>
+          <View style={styles.missionMeta}>
+            <Music color="#fb923c" size={12} strokeWidth={2} />
+            <Text style={styles.missionMetaText} numberOfLines={1}>{contentTitle}</Text>
+          </View>
+        </View>
+        <Animated.View style={[styles.missionCardRing, { opacity: ringOpacity }]} pointerEvents="none" />
+      </Pressable>
+    </Animated.View>
+  );
+});
+
 export default function ContentDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{
@@ -65,6 +140,10 @@ export default function ContentDetailScreen() {
   const [selectedMission, setSelectedMission] = useState(0);
   const [bookmarked, setBookmarked] = useState(false);
   const [playing, setPlaying] = useState(false);
+
+  const missionScrollRef = useRef<ScrollView>(null);
+  const missionScrollX = useRef(new Animated.Value(0)).current;
+  const lastHapticMission = useRef(0);
 
   const scrollY = useSharedValue(0);
 
@@ -98,8 +177,31 @@ export default function ContentDetailScreen() {
     opacity: interpolate(scrollY.value, [0, SCREEN_HEIGHT * 0.3], [1, 0.6], Extrapolation.CLAMP),
   }));
 
+  const onMissionScroll = useMemo(
+    () =>
+      Animated.event([{ nativeEvent: { contentOffset: { x: missionScrollX } } }], {
+        useNativeDriver: Platform.OS !== "web",
+        listener: (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+          const idx = Math.round(e.nativeEvent.contentOffset.x / M_SNAP);
+          const clamped = Math.max(0, Math.min(idx, MISSIONS_FOR_CONTENT.length - 1));
+          if (clamped !== lastHapticMission.current) {
+            lastHapticMission.current = clamped;
+            setSelectedMission(clamped);
+            if (Platform.OS !== "web") void Haptics.selectionAsync();
+          }
+        },
+      }),
+    [missionScrollX]
+  );
+
+  const handleMissionMomentumEnd = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const idx = Math.round(e.nativeEvent.contentOffset.x / M_SNAP);
+    setSelectedMission(Math.max(0, Math.min(idx, MISSIONS_FOR_CONTENT.length - 1)));
+  }, []);
+
   const handleMissionSelect = useCallback((index: number) => {
     setSelectedMission(index);
+    missionScrollRef.current?.scrollTo({ x: index * M_SNAP, animated: true });
     if (Platform.OS !== "web") {
       void Haptics.selectionAsync();
     }
@@ -180,38 +282,34 @@ export default function ContentDetailScreen() {
           {/* Mission selector */}
           <View style={styles.missionSection}>
             <Text style={styles.missionLabel}>SELECT MISSION</Text>
-            <ScrollView
+            <Animated.ScrollView
+              ref={missionScrollRef}
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.missionScroll}
-              decelerationRate={0.9}
-              snapToInterval={SCREEN_WIDTH * 0.72 + 24}
-              snapToAlignment="center"
+              snapToInterval={M_SNAP}
+              snapToAlignment="start"
+              decelerationRate={0.98}
+              contentContainerStyle={{
+                paddingLeft: M_SIDE_PAD,
+                paddingRight: M_SIDE_PAD - M_CARD_GAP,
+                paddingBottom: 16,
+                paddingTop: 8,
+              }}
+              onScroll={onMissionScroll}
+              onMomentumScrollEnd={handleMissionMomentumEnd}
+              scrollEventThrottle={8}
             >
-              {MISSIONS_FOR_CONTENT.map((m, i) => {
-                const active = i === selectedMission;
-                return (
-                  <Pressable
-                    key={m.id}
-                    style={[styles.missionCard, active && styles.missionCardActive]}
-                    onPress={() => handleMissionSelect(i)}
-                  >
-                    <Image source={{ uri: m.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
-                    <View style={styles.missionCardOverlay} />
-                    <View style={styles.missionCardContent}>
-                      <Text style={styles.missionCardTitle}>{m.title}</Text>
-                      <View style={styles.missionChip}>
-                        <Text style={styles.missionChipText}>{m.subtitle}</Text>
-                      </View>
-                      <View style={styles.missionMeta}>
-                        <Music color="#fb923c" size={12} strokeWidth={2} />
-                        <Text style={styles.missionMetaText} numberOfLines={1}>{title}</Text>
-                      </View>
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
+              {MISSIONS_FOR_CONTENT.map((m, i) => (
+                <MissionCard
+                  key={m.id}
+                  mission={m}
+                  index={i}
+                  scrollX={missionScrollX}
+                  contentTitle={title}
+                  onPress={handleMissionSelect}
+                />
+              ))}
+            </Animated.ScrollView>
           </View>
         </Animated.View>
 
@@ -297,8 +395,6 @@ export default function ContentDetailScreen() {
 }
 
 const HERO_HEIGHT = SCREEN_HEIGHT * 0.72;
-const MISSION_CARD_WIDTH = SCREEN_WIDTH * 0.68;
-const MISSION_CARD_HEIGHT = MISSION_CARD_WIDTH * (1 / 1.5);
 
 const styles = StyleSheet.create({
   rootContainer: {
@@ -380,29 +476,21 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 12,
   },
-  missionScroll: {
-    paddingHorizontal: SCREEN_WIDTH * 0.15,
-    gap: 24,
-  },
   missionCard: {
-    width: MISSION_CARD_WIDTH,
-    height: MISSION_CARD_HEIGHT,
+    width: M_CARD_WIDTH,
+    height: M_CARD_HEIGHT,
     borderRadius: 40,
     overflow: "hidden",
-    opacity: 0.25,
-    transform: [{ scale: 0.9 }],
-    borderWidth: 3,
-    borderColor: "transparent",
   },
-  missionCardActive: {
-    opacity: 1,
-    transform: [{ scale: 1.05 }],
+  missionCardRing: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 4,
     borderColor: "#f97316",
+    borderRadius: 40,
     shadowColor: "#f97316",
     shadowOpacity: 0.5,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 0 },
-    elevation: 12,
   },
   missionCardOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -456,7 +544,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 2,
     textTransform: "uppercase",
-    maxWidth: MISSION_CARD_WIDTH - 80,
+    maxWidth: M_CARD_WIDTH - 80,
   },
   startWrap: {
     alignItems: "center",
