@@ -380,10 +380,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   titleContainer: {
-    flex: 1,
-    height: 32,
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: 52,
     alignItems: "center",
     justifyContent: "center",
+    pointerEvents: "none",
   },
   headerTitle: {
     position: "absolute",
