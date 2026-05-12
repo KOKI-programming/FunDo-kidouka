@@ -137,9 +137,46 @@ export const MISSION_CONTENTS: Record<string, ContentItem[]> = {
 
 export function getContentsForMission(missionId: string): ContentItem[] {
   return MISSION_CONTENTS[missionId] ?? [
-    TOP10[7], // バチバチに仕上げる時間
-    CLEANING[7], // 自分リセットタイム
-    BRAND[2], // かっこいい男の作り方
-    BRAND[5], // 余裕ある男の思考
+    TOP10[7],
+    CLEANING[7],
+    BRAND[2],
+    BRAND[5],
+  ];
+}
+
+// 気分IDに対応するコンテンツ（4件）
+export const MOOD_CONTENTS: Record<string, ContentItem[]> = {
+  m1: [
+    BRAND[6], // 自信を作る時間
+    BRAND[1], // 自分の価値を上げる時間
+    BRAND[4], // 舐められない自分へ
+    SELF[1],  // 自己嫌悪リセット音声
+  ],
+  m2: [
+    STUDY[2],  // ガチ集中モード
+    STUDY[3],  // 世界を遮断する音
+    STUDY[0],  // 脳をゾーンに入れる
+    STUDY[6],  // 思考を研ぎ澄ます音
+  ],
+  m3: [
+    TOP10[0],  // 筋トレが続く5つの習慣
+    TOP10[4],  // 鬼集中ワークアウト
+    TOP10[5],  // 心拍数ぶち上げモード
+    MORNING[3], // 最強の1日スタート
+  ],
+  m4: [
+    GROWTH[0], // 世界が変わる！読書の習慣
+    GROWTH[1], // 人生効率化ラジオ
+    GROWTH[4], // 頭いい人の習慣
+    GROWTH[6], // 成果出す人の裏側
+  ],
+};
+
+export function getContentsForMood(moodId: string): ContentItem[] {
+  return MOOD_CONTENTS[moodId] ?? [
+    TOP10[7],
+    CLEANING[7],
+    BRAND[2],
+    BRAND[5],
   ];
 }
