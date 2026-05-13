@@ -158,10 +158,11 @@ export default function RecommendScreen() {
                 router.back();
               }
             }}
-            style={styles.headerButton}
+            style={styles.headerBackButton}
             testID="back-button"
           >
             <ArrowLeft color="#18181b" size={22} strokeWidth={2.5} />
+            <Text style={styles.headerBackLabel}>戻る</Text>
           </Pressable>
 
           <View style={styles.titleContainer}>
@@ -392,6 +393,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 20,
+  },
+  headerBackButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    height: 40,
+    paddingHorizontal: 4,
+    borderRadius: 20,
+  },
+  headerBackLabel: {
+    fontSize: 14,
+    fontWeight: "700" as const,
+    color: "#18181b",
   },
   titleContainer: {
     position: "absolute",
