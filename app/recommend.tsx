@@ -196,15 +196,13 @@ export default function RecommendScreen() {
             })}
           </View>
 
-          {pageIndex < 2 ? (
+          {pageIndex === 0 ? (
             <Pressable
               onPress={() => goToPage(pageIndex + 1)}
               style={styles.headerNext}
               testID="next-button"
             >
-              <Text style={styles.headerNextLabel}>
-                {pageIndex === 0 ? "気分別" : "コンテンツ"}
-              </Text>
+              <Text style={styles.headerNextLabel}>気分別</Text>
               <ArrowRight color="#18181b" size={22} strokeWidth={2.5} />
             </Pressable>
           ) : (
