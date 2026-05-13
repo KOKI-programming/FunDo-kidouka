@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.85, transform: [{ scale: 0.97 }] },
   missionBanner: {
     width: "100%",
-    aspectRatio: 3.5 / 1,
+    aspectRatio: 2.5 / 1,
     borderRadius: 28,
     overflow: "hidden",
     borderWidth: 2,
