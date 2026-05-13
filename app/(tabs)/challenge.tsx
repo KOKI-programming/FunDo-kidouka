@@ -32,8 +32,8 @@ import {
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const GRID_CARD_WIDTH = (SCREEN_WIDTH - 16 - 8) / 2;
 const GRID_CARD_HEIGHT = 140;
-const RANK_CARD_WIDTH = 340;
-const RANK_CARD_HEIGHT = 180;
+const RANK_CARD_WIDTH = 300;
+const RANK_CARD_HEIGHT = 160;
 
 const FILTERS = [
   "すべて",
