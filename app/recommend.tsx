@@ -35,7 +35,7 @@ type MoodItem = {
   badge?: string;
 };
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const MOODS: MoodItem[] = [
   { id: "m1", label: "自信を付けたい", english: "CONFIDENCE", emoji: "✨", color: "#ec4899", badge: "CONFIDENCE" },
@@ -221,10 +221,11 @@ export default function RecommendScreen() {
           onScroll={onScroll}
           scrollEventThrottle={16}
           testID="recommend-pager"
+          style={styles.pager}
         >
           {/* Page 1: おすすめ */}
           <ScrollView
-            style={{ width: SCREEN_WIDTH }}
+            style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}
             contentContainerStyle={styles.pageContent}
             showsVerticalScrollIndicator={false}
           >
@@ -250,7 +251,7 @@ export default function RecommendScreen() {
 
           {/* Page 2: 気分選択 */}
           <ScrollView
-            style={{ width: SCREEN_WIDTH }}
+            style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}
             contentContainerStyle={styles.pageContent}
             showsVerticalScrollIndicator={false}
           >
@@ -323,7 +324,7 @@ export default function RecommendScreen() {
 
           {/* Page 3: コンテンツ選択 */}
           <ScrollView
-            style={{ width: SCREEN_WIDTH }}
+            style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}
             contentContainerStyle={styles.pageContent}
             showsVerticalScrollIndicator={false}
           >
@@ -632,6 +633,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
+  },
+  pager: {
+    flex: 1,
   },
   dots: {
     position: "absolute",
