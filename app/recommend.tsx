@@ -16,8 +16,8 @@ import {
   Text,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ArrowLeft, VolumeX } from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ArrowLeft, ArrowRight, VolumeX } from "lucide-react-native";
 
 type RecommendParams = {
   id?: string;
@@ -49,7 +49,6 @@ const TITLES = ["おすすめ", "気分選択", "コンテンツ選択"] as cons
 export default function RecommendScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<RecommendParams>();
-  const insets = useSafeAreaInsets();
   const [pageIndex, setPageIndex] = useState<number>(0);
   const [selectedMood, setSelectedMood] = useState<string>("m1");
 
@@ -149,7 +148,7 @@ export default function RecommendScreen() {
     <View style={styles.screen} testID="recommend-screen">
       <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="dark-content" />
-      <View style={[styles.safeArea, { paddingTop: insets.top }]}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <View style={styles.header}>
           <Pressable
             onPress={() => {
@@ -197,7 +196,20 @@ export default function RecommendScreen() {
             })}
           </View>
 
-          <View style={styles.headerButton} />
+          {pageIndex < 2 ? (
+            <Pressable
+              onPress={() => goToPage(pageIndex + 1)}
+              style={styles.headerNext}
+              testID="next-button"
+            >
+              <Text style={styles.headerNextLabel}>
+                {pageIndex === 0 ? "気分別" : "コンテンツ"}
+              </Text>
+              <ArrowRight color="#18181b" size={22} strokeWidth={2.5} />
+            </Pressable>
+          ) : (
+            <View style={styles.headerButton} />
+          )}
         </View>
 
         <Animated.ScrollView
@@ -356,7 +368,7 @@ export default function RecommendScreen() {
             />
           ))}
         </View>
-      </View>
+      </SafeAreaView>
     </View>
   );
 }
@@ -626,10 +638,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dots: {
+    position: "absolute",
+    bottom: 24,
+    left: 0,
+    right: 0,
     flexDirection: "row",
     justifyContent: "center",
     gap: 6,
-    paddingVertical: 16,
   },
   dot: {
     width: 6,
