@@ -17,7 +17,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, ArrowRight, VolumeX } from "lucide-react-native";
+import { ArrowLeft, VolumeX } from "lucide-react-native";
 
 type RecommendParams = {
   id?: string;
@@ -196,20 +196,7 @@ export default function RecommendScreen() {
             })}
           </View>
 
-          {pageIndex < 2 ? (
-            <Pressable
-              onPress={() => goToPage(pageIndex + 1)}
-              style={styles.headerNext}
-              testID="next-button"
-            >
-              <Text style={styles.headerNextLabel}>
-                {pageIndex === 0 ? "気分別" : "コンテンツ"}
-              </Text>
-              <ArrowRight color="#18181b" size={22} strokeWidth={2.5} />
-            </Pressable>
-          ) : (
-            <View style={styles.headerButton} />
-          )}
+          <View style={styles.headerButton} />
         </View>
 
         <Animated.ScrollView
