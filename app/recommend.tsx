@@ -24,6 +24,7 @@ type RecommendParams = {
   title?: string;
   subtitle?: string;
   duration?: string;
+  imageUrl?: string;
 };
 
 type MoodItem = {
@@ -258,7 +259,7 @@ export default function RecommendScreen() {
             <View style={styles.missionBanner}>
               <Image
                 source={{
-                  uri: "https://images.unsplash.com/photo-1581578731548-c64695cc6958?auto=format&fit=crop&q=80&w=600",
+                  uri: params.imageUrl ?? "https://images.unsplash.com/photo-1581578731548-c64695cc6958?auto=format&fit=crop&q=80&w=600",
                 }}
                 style={StyleSheet.absoluteFillObject}
                 contentFit="cover"

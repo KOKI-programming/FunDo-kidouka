@@ -215,6 +215,7 @@ export default function HomeScreen() {
           title: mission.title,
           subtitle: mission.subtitle,
           duration: String(mission.durationMinutes),
+          imageUrl: mission.imageUrl,
         },
       });
     } else {
